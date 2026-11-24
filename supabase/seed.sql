@@ -1,6 +1,6 @@
 -- =============================================================================
 -- PARTHA — Supabase PostgreSQL Seed Data
--- Run this in the Supabase SQL Editor after executing supabase-schema.sql
+-- Run this in the Supabase SQL Editor after executing the schema migration (supabase/migrations/)
 -- =============================================================================
 
 -- 1. SEED USERS

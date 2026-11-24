@@ -28,9 +28,11 @@ Open **`http://localhost:3000`** in your browser.
 
 The backend has been migrated from Firebase to **Supabase** (PostgreSQL + Supabase Auth + Row-Level Security).
 
-### 1. Database Schema
-The complete PostgreSQL schema with tables, indexes, custom ENUM types, and Row-Level Security (RLS) policies is located in:
-👉 [`supabase-schema.sql`](file:///d:/PARTHA---MINI-PROJECT-main/supabase-schema.sql)
+### 1. Database Schema & Migrations
+The complete PostgreSQL schema with tables, indexes, custom ENUM types, and Row-Level Security (RLS) policies is located in the standard Supabase structure:
+- **Schema Migration**: [`supabase/migrations/20261124000000_partha_schema.sql`](file:///d:/PARTHA/supabase/migrations/20261124000000_partha_schema.sql)
+- **Seed Data**: [`supabase/seed.sql`](file:///d:/PARTHA/supabase/seed.sql)
+- **All-in-One Setup Script**: [`supabase/setup_all.sql`](file:///d:/PARTHA/supabase/setup_all.sql) (for quick copy-pasting into the Supabase Dashboard SQL Editor)
 
 ### 2. Environment Variables
 Create or update your `.env` file (a starter template is ready in `.env` and `.env.example`):
@@ -48,7 +50,7 @@ VITE_SUPABASE_ANON_KEY="your-supabase-anon-public-key"
 
 All platform seed data and the full database dictionary have been generated as a multi-tab Microsoft Excel workbook:
 
-👉 **[`PARTHA_Database_Seed_Data.xlsx`](file:///d:/PARTHA---MINI-PROJECT-main/PARTHA_Database_Seed_Data.xlsx)**
+👉 **[`PARTHA_Database_Seed_Data.xlsx`](file:///d:/PARTHA/PARTHA_Database_Seed_Data.xlsx)**
 
 ### Workbook Contents:
 1. **`Alumni Directory`**: Verified and pending alumni profiles (Rohan Joshi, Ananya Bhat, Karthik Hegde, Divya Kulkarni, Meera Deshpande, Vikram Patil) with domain, company, skills, batch, and contact info.
