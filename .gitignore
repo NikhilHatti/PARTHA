@@ -1,8 +1,68 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.*
+bun.lockb
+
+# Build output (npm run clean removes dist/ and server.js)
 build/
 dist/
+server.js
+.env.gemini-sidecar-port
+.serverless/
+
+# Caches
+.cache/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# Test coverage
 coverage/
-.DS_Store
-*.log
-.env*
+
+# Environment files (add real secrets only locally)
+.env
+.env.*
 !.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+pnpm-debug.log*
+
+# Local databases / backups
+*.db
+*.sqlite
+*.sqlite3
+supabase/.branches/
+supabase/.temp/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.swp
+*~
+
+# Office temp files next to tracked .xlsx
+~$*.xlsx
+~$*.xls
+
+# Certificates & Credentials
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+service-account*.json
+
+# Python (scripts/generate_excel_data.py)
+__pycache__/
+*.py[cod]
+.venv/
+venv/

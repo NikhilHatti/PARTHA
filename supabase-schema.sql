@@ -255,35 +255,72 @@ CREATE INDEX imported_form_idx ON senior_form_imported(form_id);
 -- ADMINS POLICIES
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "admins_select_own" ON admins FOR SELECT USING (uid = auth.uid()::text);
-CREATE POLICY "admins_service_insert" ON admins FOR INSERT WITH CHECK (true);
+-- Note: Service role automatically bypasses RLS in Supabase. Non-admin users cannot insert into admins.
 
 -- USERS POLICIES
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "users_select_own" ON users FOR SELECT USING (uid = auth.uid()::text);
+CREATE POLICY "users_select_admin" ON users FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 CREATE POLICY "users_insert_own" ON users FOR INSERT WITH CHECK (uid = auth.uid()::text);
-CREATE POLICY "users_update_own" ON users FOR UPDATE USING (uid = auth.uid()::text);
+CREATE POLICY "users_update_own" ON users FOR UPDATE
+  USING (uid = auth.uid()::text)
+  WITH CHECK (
+    uid = auth.uid()::text
+    AND (
+      role != 'admin'
+      OR EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text)
+    )
+  );
 
 -- ALUMNI POLICIES
 ALTER TABLE alumni ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "alumni_select_verified" ON alumni FOR SELECT
   USING (verification_status = 'verified' OR uid = auth.uid()::text);
-CREATE POLICY "alumni_insert_own" ON alumni FOR INSERT WITH CHECK (uid = auth.uid()::text);
-CREATE POLICY "alumni_update_own" ON alumni FOR UPDATE USING (uid = auth.uid()::text);
+CREATE POLICY "alumni_select_admin" ON alumni FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
+CREATE POLICY "alumni_insert_own" ON alumni FOR INSERT
+  WITH CHECK (
+    uid = auth.uid()::text
+    AND (
+      verification_status = 'pending'
+      OR EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text)
+    )
+  );
+CREATE POLICY "alumni_update_own" ON alumni FOR UPDATE
+  USING (uid = auth.uid()::text)
+  WITH CHECK (
+    uid = auth.uid()::text
+    AND (
+      verification_status = (SELECT a.verification_status FROM alumni a WHERE a.id = alumni.id)
+      OR EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text)
+    )
+  );
+CREATE POLICY "alumni_update_admin" ON alumni FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 
 -- MENTORSHIPS POLICIES
 ALTER TABLE mentorships ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "mentorships_participant_select" ON mentorships FOR SELECT
   USING (student_id = auth.uid()::text OR alumni_owner_uid = auth.uid()::text);
+CREATE POLICY "mentorships_admin_select" ON mentorships FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 CREATE POLICY "mentorships_student_insert" ON mentorships FOR INSERT
   WITH CHECK (student_id = auth.uid()::text);
-CREATE POLICY "mentorships_participant_update" ON mentorships FOR UPDATE
-  USING (student_id = auth.uid()::text OR alumni_owner_uid = auth.uid()::text);
+-- Alumni can accept, decline, or update session booking
+CREATE POLICY "mentorships_alumni_update" ON mentorships FOR UPDATE
+  USING (alumni_owner_uid = auth.uid()::text);
+-- Student can only update their pending request (e.g. withdraw or change message, cannot self-accept)
+CREATE POLICY "mentorships_student_update" ON mentorships FOR UPDATE
+  USING (student_id = auth.uid()::text)
+  WITH CHECK (student_id = auth.uid()::text AND status = 'pending');
 
 -- ALUMNI PRIVATE CONTACTS POLICIES
 ALTER TABLE alumni_private_contacts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "contacts_owner_access" ON alumni_private_contacts FOR SELECT
   USING (
     owner_uid = auth.uid()::text
+    OR EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text)
     OR EXISTS (
       SELECT 1 FROM mentorships
       WHERE mentorships.alumni_id = alumni_private_contacts.alumni_id
@@ -304,14 +341,22 @@ CREATE POLICY "messages_participant_insert" ON mentorship_messages FOR INSERT
 -- OPPORTUNITIES POLICIES
 ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "opp_select_published" ON opportunities FOR SELECT USING (is_published = TRUE);
+CREATE POLICY "opp_select_admin" ON opportunities FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 CREATE POLICY "opp_insert_own" ON opportunities FOR INSERT WITH CHECK (posted_by_id = auth.uid()::text);
 CREATE POLICY "opp_update_own" ON opportunities FOR UPDATE USING (posted_by_id = auth.uid()::text);
+CREATE POLICY "opp_update_admin" ON opportunities FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 
 -- GUIDES POLICIES
 ALTER TABLE guides ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "guides_select_published" ON guides FOR SELECT USING (is_published = TRUE);
+CREATE POLICY "guides_select_admin" ON guides FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 CREATE POLICY "guides_insert_own" ON guides FOR INSERT WITH CHECK (author_id = auth.uid()::text);
 CREATE POLICY "guides_update_author" ON guides FOR UPDATE USING (author_id = auth.uid()::text);
+CREATE POLICY "guides_update_admin" ON guides FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 
 -- GUIDE UPVOTES POLICIES
 ALTER TABLE guide_upvotes ENABLE ROW LEVEL SECURITY;
@@ -326,10 +371,14 @@ CREATE POLICY "bookmarks_own" ON user_bookmarks FOR ALL USING (owner_uid = auth.
 -- SENIOR FORMS POLICIES
 ALTER TABLE senior_forms ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "forms_own" ON senior_forms FOR ALL USING (created_by_uid = auth.uid()::text);
+CREATE POLICY "forms_admin" ON senior_forms FOR ALL
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 
 -- SENIOR FORM IMPORTED POLICIES
 ALTER TABLE senior_form_imported ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "imported_own" ON senior_form_imported FOR ALL USING (created_by_uid = auth.uid()::text);
+CREATE POLICY "imported_admin" ON senior_form_imported FOR ALL
+  USING (EXISTS (SELECT 1 FROM admins WHERE admins.uid = auth.uid()::text));
 
 -- ---------------------------------------------------------------------------
 -- 4. TRIGGERS
